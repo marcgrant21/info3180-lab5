@@ -10,6 +10,7 @@ from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, current_user, login_required
 from app.forms import LoginForm
 from app.models import UserProfile
+from werkzeug.security import check_password_hash
 
 
 ###
@@ -31,10 +32,9 @@ def about():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     form = LoginForm()
-    if request.method == "POST":
+    if request.method == "POST" and form.validate_on_submit():
         # change this to actually validate the entire form submission
         # and not just one field
-        if form.validate_on_submit():
             # Get the username and password values from the form.
             username = form.username.data
             password = form.password.data
@@ -46,14 +46,13 @@ def login():
             user = UserProfile.query.filter_by(username=username).first()
             # get user id, load into session
            
-            if user.password == password:
+            if check_password_hash(user.password, password):
                 # get user id, load into session
                 login_user(user)
 
                 next_page = request.args.get('next')
                 # remember to flash a message to the user
                 flash("Login Successful", "success")
-                print (next_page)
                 return redirect(next_page or url_for("secure") )  # they should be redirected to a secure-page route instead
 
             flash("login failed", 'danger')
